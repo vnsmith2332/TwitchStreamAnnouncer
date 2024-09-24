@@ -55,7 +55,7 @@ Save your changes and close the file.
 Now that your setup is complete, you are ready to run the bot! Open Powershell and run the following commands, one at a time. **Replace the text "C:/Path/To/.py/File" with the path to the code file you downloaded during setup**:
 ```shell
 cd C:/Path/To/.py/File
-python3 bot_file.py
+python3 main.py
 ```
 Now the bot should be running!
 
@@ -63,6 +63,17 @@ Now the bot should be running!
 Now that your setup is complete, you are ready to run the bot! Open Powershell and run the following commands, one at a time. **Replace the text "/Path/To/.py/File" with the path to the code file you downloaded during setup**:
 ```shell
 cd /Path/To/.py/File
-python3 bot_file.py
+python3 main.py
 ```
 Now the bot should be running!
+
+## Customization
+You can customize the Reddit post the TwitchStreamAnnouncer makes with some simple code changes:
+* To customize the title, find `title = f"{TWITCH_USER_NAME} is now streaming live on Twitch!!!"` within the function `announce_stream` (line 122). Change the text in quotation marks to your desired title.
+* To customize the body of the post, find `content = f"Watch me play {stream['data'][0]['game_name']} at https://www.twitch.tv/{TWITCH_USER_NAME}"` within the function `announce_stream` (line 123). Change the text in quotation marks to your desired title.
+
+## Troubleshooting
+There is a chance you will encounter problems while using this bot. Common problems you may face - and how to fix them - follow:
+* `cd: no such file or directory`: This error may occur when trying to navigate to the bot file using the `cd` command in the terminal/Powershell. If this error occurs, you have entered the path to the bot file incorrectly. Check the file's path and try again. For more information on file paths, read [this article.](https://www.codecademy.com/resources/docs/general/file-paths)
+* `FileNotFoundError`: This error may occur when trying to run the bot with the command `python3 main.py`. It means Python was not able to locate the file you program you tried to execute. If this error occurs, ensure you used the `cd` command to enter the directory containing the bot file and try again.
+* `CredentialError`: This error occurs if your Twitch and/or Reddit credentials are invalid. This error is usually accompanied by a helpful message. Read this message to help identify the problem. Regardless of the message, the problem will pertain to the credentials you configured as a part of this guide. Ensure these credentials are correct.
