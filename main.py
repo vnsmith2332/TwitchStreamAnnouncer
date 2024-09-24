@@ -1,5 +1,6 @@
 import requests
 import praw
+from prawcore.exceptions import OAuthException, ResponseException
 import time
 
 # twitch auth details
@@ -19,6 +20,12 @@ SUBREDDIT = "YOUR SUBREDDIT"
 FREQUENCY = 300
 
 
+class CredentialError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+
 def get_client_credentials() -> dict:
     """
     Retrieve the client credentials necessary for an application to call the Twitch API
@@ -34,7 +41,14 @@ def get_client_credentials() -> dict:
             "client_secret": TWITCH_CLIENT_SECRET,
             "grant_type": "client_credentials"
         }
-    ).json()
+    )
+
+    if client_credentials.status_code == 400:
+        raise CredentialError(f"The Twitch client ID f{TWITCH_CLIENT_ID} is invalid. Correct it and try again.")
+    if client_credentials.status_code == 403:
+        raise CredentialError(f"The Twitch client secret f{TWITCH_CLIENT_SECRET} is invalid. Correct it and try again.")
+        
+    client_credentials = client_credentials.json()
     print(f"Obtained client credentials!\nBearer token: {client_credentials['access_token']}")
     return client_credentials
 
@@ -111,7 +125,8 @@ def announce_stream(stream: dict) -> None:
     """
     print(f"Announcing stream {stream['data'][0]['id']} to r/{SUBREDDIT}")
 
-    reddit = praw.Reddit(
+    try:
+        reddit = praw.Reddit(
             client_id=REDDIT_CLIENT_ID,
             client_secret=REDDIT_CLIENT_SECRET,
             user_agent=REDDIT_USER_AGENT,
@@ -119,14 +134,19 @@ def announce_stream(stream: dict) -> None:
             password=REDDIT_PASSWORD
         )
 
-    title = f"{TWITCH_USER_NAME} is now streaming live on Twitch!!!"
-    content = f"Watch me play {stream['data'][0]['game_name']} at https://www.twitch.tv/{TWITCH_USER_NAME}"
+        title = f"{TWITCH_USER_NAME} is now streaming live on Twitch!!!"
+        content = f"Watch me play {stream['data'][0]['game_name']} at https://www.twitch.tv/{TWITCH_USER_NAME}"
 
-    subreddit = reddit.subreddit(SUBREDDIT)
-    subreddit.submit(
-        title=title,
-        selftext=content
-    )
+        subreddit = reddit.subreddit(SUBREDDIT)
+        subreddit.submit(
+            title=title,
+            selftext=content
+        )
+    except ResponseException:
+        raise CredentialError("Invalid Reddit client ID and/or invalid Reddit client secret. Check these credentials and try again.")
+    except OAuthException:
+        raise CredentialError("Invalid Reddit username and/or invalid Reddit password. Check these credentials and try again.")
+
     print(f"Successfully announced the stream in r/{SUBREDDIT}!")
 
 
@@ -139,10 +159,11 @@ def bot() -> None:
                 print(f"Stream {stream['data'][0]['id']} is a new stream! Announcing the stream to r/{SUBREDDIT}.")
                 process_new_stream(stream)
             else:
-                print(f"Stream {stream['data'][0]['id']} has already been announced. Checking for a new stream in {FREQUENCY} seconds...")
+                print(
+                    f"Stream {stream['data'][0]['id']} has already been announced. Checking for a new stream in {FREQUENCY} seconds...")
         else:
             print(f"{TWITCH_USER_NAME} is not currently streaming. Checking again in {FREQUENCY} seconds...")
-        print(f"{'-'*100}\n\n")
+        print(f"{'-' * 100}\n\n")
         time.sleep(FREQUENCY)
 
 
